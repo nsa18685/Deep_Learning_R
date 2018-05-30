@@ -142,16 +142,28 @@ $(document).ready(function () {
 </div>
 <div id="-" class="section level3">
 <h3><a href="https://www.slideshare.net/oracleyu23/ss-97742019"> 1. 나이브베이즈 이해 </a></h3>
+<blockquote>
+<p>베이지안 기법 기반의 분류기는 훈련데이터를 활용해 특징 값이 제공하는 증거 기반으로 결과가 관측될 확률을 계산한다. 나중에 분류기가 레이블이 없는 데이터에 적용될 때 결과가 관측될 확률을 이용해서 새로운 특징에 가장 유력한 클리스를 예측한다.</p>
+</blockquote>
 </div>
 <div id="---" class="section level3">
 <h3>2. 나이브 베이즈에 의한 분류</h3>
+<blockquote>
+<p>베이지안 분류기는 결과에 대한 전체 확률을 추정하기 위해 동시에 여러 속성 정보를 고려해야만 하는 문제에 가장 적합하다.</p>
+</blockquote>
+<blockquote>
+<p>베이지안 확률의 이론은 사건에 대한 우도는 복수시행에서 즉시 이용할 수 있는 증거를 기반으로 추정해야만 한다는 아이디어에 뿌리를 두고 있다.</p>
+</blockquote>
+<blockquote>
+<p>모든 사건이 독립이라면 다른 사건을 관측해 어떤 사건을 예측하는 것은 불가능 하다. 달리말해, 종속사건이 예측모델링에 기반이 된다.</p>
+</blockquote>
+<p><br></p>
+<div id="----" class="section level4">
+<h4>스팸메일과 햄메일을 정확하게 구분하기 위해서는?</h4>
 <div class="figure">
 <img src="data:image/png;base64,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" />
 
 </div>
-<p><br></p>
-<div id="----" class="section level4">
-<h4>스팸메일과 햄메일을 정확하게 구분하기 위해서는?</h4>
 <p>비아그라 단어 하나만 가지고 스팸메일인지 분류하려면 처방전도 스팸이 될 확률이 높아지니 다른 단어들도 같이 포함시켜서 확률을 구해야한다.</p>
 <p>예: 비아그라 = yes, 돈 = no, 식료품 = no, 주소삭제 = yes 용어: ￢: 존재하지 않는다(부정) ㅋ : 존재한다(긍정) <br> <br></p>
 </div>
@@ -164,7 +176,7 @@ $(document).ready(function () {
 # 나타난 결과에 따라 여러 가능한 가설들을 평가할 수 있는 측도(Measure)임
 # 우도는, 확률로 표현되나 각 가설에 대한 가능도/지지도 등의 의미가 강함
 # 관측결과를 초래한 미지의 모수를 추정하는 것에 대한 함수적 표현임
-# 연속사건에서는 특정 사건이 일어날 확률이 전부 0으로 계산되기 때문에 사건들이 일어날 가능성을 비교하는 것이 불가능하며, 가능도라는 개념을 적용해야 이를 비교할 수 있다.
+# 연속사건에서는 특정 사건이 일어날 확률이 전부 0으로 계산되기 때문에 사건들이 일어날 가능성을 비교하는 것이 불가능하며, 가능도(우도)라는 개념을 적용해야 이를 비교할 수 있다.
 # 셀 수 있는 사건에서는 확률과 가능도가 같다.
 
 # 스팸일 우도 = P(비아그라|스팸) ∩ (￢돈|스팸) ∩ (￢식료품|스팸) ∩ (주소삭제|스팸) * P(스팸)
@@ -176,6 +188,9 @@ y &lt;- (1/80) * (66/80) * (71/80) * (23/80) * (80/100)
 # 스팸일 확률
 round(x / (x + y),2)</code></pre>
 <pre><code>## [1] 0.85</code></pre>
+<blockquote>
+<p>독립적인 사건이 아닌 종속 사건의 경우 중첩된 정도가 항상 존재 -&gt; 우도를 사용하여 전체를 구함</p>
+</blockquote>
 <p><br> <br></p>
 </div>
 <div id="265.---------------" class="section level4">
@@ -379,7 +394,9 @@ CrossTable(x = mushroom_test[,1], y = result1)</code></pre>
   
   data&lt;-file.choose(&quot;분석할 csv파일명을 입력하세요&quot;)
   
-  table1 &lt;- read.csv(data, stringsAsFactors = F, header = F)
+  na.string &lt;- NA
+  
+  table1 &lt;- read.csv(data, stringsAsFactors = F, header = F, na.string = na.string)
 
   col &lt;- menu(colnames(table1), title = &quot;라벨이 될 컬럼 이름을 입력하세요 &quot;)
   
@@ -427,7 +444,7 @@ CrossTable(x = mushroom_test[,1], y = result1)</code></pre>
   # 7. 이원 교차표로 분류의 최종 결과를 확인한다.
   library(gmodels)
   
-  CrossTable(x = table_test[,1], y = result1)
+  CrossTable(x = table_test[,col], y = result1)
             # 실제              예측
     
 }
