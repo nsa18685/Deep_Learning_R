@@ -143,7 +143,7 @@ $(document).ready(function () {
 <h4>실습</h4>
 <p><br></p>
 <pre class="r"><code># 1. 데이터 R로 로드
-mushroom &lt;- read.csv(&quot;C:/data/mushroom.csv&quot;, header = F, stringsAsFactors = F)
+mushroom &lt;- read.csv(&quot;C:/data/mushrooms.csv&quot;, header = T, stringsAsFactors = F)
 
 # 2. ? 와 '' 비어있는 데이터를 NA로 변경한다.
 # View(mushroom)
@@ -156,7 +156,173 @@ for (i in (15:23)) {
 # 3. factor로 변환한다.
 
 dim(mushroom)</code></pre>
-<pre><code>## [1] 5343   23</code></pre>
+<pre><code>## [1] 8124   23</code></pre>
+<pre class="r"><code>for (i in 1:23) {
+  mushroom[,i] &lt;- factor(mushroom[,i])
+}
+
+# str(mushroom)
+
+# 4. 훈련데이터와 테스트 데이터로 나눈다.
+
+set.seed(11)
+
+# 행의 건수 확인
+train_cnt &lt;- round(0.75 * dim(mushroom)[1]) 
+# shuffle 하는 방법 중 하나
+train_indx &lt;- sample(1:dim(mushroom)[1], train_cnt, replace = F)
+
+mushroom_train &lt;- mushroom[train_indx,]
+mushroom_test &lt;- mushroom[-train_indx,]
+
+# 5. 나이브 베이즈 함수를 이용해서 독버섯과 일반 버섯을 분류하는 모델을 생성한다.
+colnames(mushroom)</code></pre>
+<pre><code>##  [1] &quot;type&quot;                     &quot;cap_shape&quot;               
+##  [3] &quot;cap_surface&quot;              &quot;cap_color&quot;               
+##  [5] &quot;bruises&quot;                  &quot;odor&quot;                    
+##  [7] &quot;gill_attachment&quot;          &quot;gill_spacing&quot;            
+##  [9] &quot;gill_size&quot;                &quot;gill_color&quot;              
+## [11] &quot;stalk_shape&quot;              &quot;stalk_root&quot;              
+## [13] &quot;stalk_surface_above_ring&quot; &quot;stalk_surface_below_ring&quot;
+## [15] &quot;stalk_color_above_ring&quot;   &quot;stalk_color_below_ring&quot;  
+## [17] &quot;veil_type&quot;                &quot;veil_color&quot;              
+## [19] &quot;ring_number&quot;              &quot;ring_type&quot;               
+## [21] &quot;spore_print_color&quot;        &quot;population&quot;              
+## [23] &quot;habitat&quot;</code></pre>
+<pre class="r"><code>library(e1071)
+# V1~: label(기준으로 사용), laplace: positive double controlling Laplace smoothing. 
+
+model1 &lt;- naiveBayes(type~. , data = mushroom_train, laplace = 0.0001)
+
+result1 &lt;- predict(model1,mushroom_test[, -1])
+# 6. 
+# install.packages(&quot;OneR&quot;)
+library(OneR)
+
+model2 &lt;- OneR(type~. , data = mushroom_train)
+model2</code></pre>
+<pre><code>## 
+## Call:
+## OneR.formula(formula = type ~ ., data = mushroom_train)
+## 
+## Rules:
+## If odor = almond   then type = edible
+## If odor = anise    then type = edible
+## If odor = creosote then type = poisonous
+## If odor = fishy    then type = poisonous
+## If odor = foul     then type = poisonous
+## If odor = musty    then type = poisonous
+## If odor = none     then type = edible
+## If odor = pungent  then type = poisonous
+## If odor = spicy    then type = poisonous
+## 
+## Accuracy:
+## 6008 of 6093 instances classified correctly (98.6%)</code></pre>
+<pre class="r"><code># 7. 위에서 생성한 모델과 테스트 데이터로 결과 확인
+
+result2 &lt;- predict(model2, mushroom_test[ , -1])
+
+# head(result1)
+
+# 7. 이원 교차표로 분류의 최종 결과를 확인한다.
+library(gmodels)
+
+          # 실제              예측
+CrossTable(x = mushroom_test[,1], y = result1)</code></pre>
+<pre><code>## 
+##  
+##    Cell Contents
+## |-------------------------|
+## |                       N |
+## | Chi-square contribution |
+## |           N / Row Total |
+## |           N / Col Total |
+## |         N / Table Total |
+## |-------------------------|
+## 
+##  
+## Total Observations in Table:  2031 
+## 
+##  
+##                    | result1 
+## mushroom_test[, 1] |    edible | poisonous | Row Total | 
+## -------------------|-----------|-----------|-----------|
+##             edible |      1017 |        11 |      1028 | 
+##                    |   485.636 |   489.959 |           | 
+##                    |     0.989 |     0.011 |     0.506 | 
+##                    |     0.997 |     0.011 |           | 
+##                    |     0.501 |     0.005 |           | 
+## -------------------|-----------|-----------|-----------|
+##          poisonous |         3 |      1000 |      1003 | 
+##                    |   497.740 |   502.171 |           | 
+##                    |     0.003 |     0.997 |     0.494 | 
+##                    |     0.003 |     0.989 |           | 
+##                    |     0.001 |     0.492 |           | 
+## -------------------|-----------|-----------|-----------|
+##       Column Total |      1020 |      1011 |      2031 | 
+##                    |     0.502 |     0.498 |           | 
+## -------------------|-----------|-----------|-----------|
+## 
+## </code></pre>
+<pre class="r"><code>CrossTable(x = mushroom_test[,1], y = result2)</code></pre>
+<pre><code>## 
+##  
+##    Cell Contents
+## |-------------------------|
+## |                       N |
+## | Chi-square contribution |
+## |           N / Row Total |
+## |           N / Col Total |
+## |         N / Table Total |
+## |-------------------------|
+## 
+##  
+## Total Observations in Table:  2031 
+## 
+##  
+##                    | result2 
+## mushroom_test[, 1] |    edible | poisonous | Row Total | 
+## -------------------|-----------|-----------|-----------|
+##             edible |      1028 |         0 |      1028 | 
+##                    |   446.170 |   489.958 |           | 
+##                    |     1.000 |     0.000 |     0.506 | 
+##                    |     0.967 |     0.000 |           | 
+##                    |     0.506 |     0.000 |           | 
+## -------------------|-----------|-----------|-----------|
+##          poisonous |        35 |       968 |      1003 | 
+##                    |   457.291 |   502.170 |           | 
+##                    |     0.035 |     0.965 |     0.494 | 
+##                    |     0.033 |     1.000 |           | 
+##                    |     0.017 |     0.477 |           | 
+## -------------------|-----------|-----------|-----------|
+##       Column Total |      1063 |       968 |      2031 | 
+##                    |     0.523 |     0.477 |           | 
+## -------------------|-----------|-----------|-----------|
+## 
+## </code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Riper 알고리즘 “복수개의 사실(조건)을 가지고 분류하는 알고리즘”</li>
+</ol>
+<p>예. 하늘을 날고 털이 있다면, 땅을 걷고 털이 있다면 포유류이다.</p>
+</div>
+<div id="-1" class="section level4">
+<h4>실습</h4>
+<p><br></p>
+<pre class="r"><code># 1. 데이터 R로 로드
+mushroom &lt;- read.csv(&quot;C:/data/mushrooms.csv&quot;, header = T, stringsAsFactors = F)
+
+# 2. ? 와 '' 비어있는 데이터를 NA로 변경한다.
+# View(mushroom)
+mushroom[which(mushroom$V12 == '?'), 12] &lt;- NA
+
+for (i in (15:23)) {
+  mushroom[which(mushroom[,i] == ''), i] &lt;- NA
+}
+
+# 3. factor로 변환한다.
+
+dim(mushroom)</code></pre>
+<pre><code>## [1] 8124   23</code></pre>
 <pre class="r"><code>for (i in 1:23) {
   mushroom[,i] &lt;- factor(mushroom[,i])
 }
@@ -175,72 +341,213 @@ train_indx &lt;- sample(1:dim(mushroom)[1], train_cnt, replace = F)
 mushroom_train &lt;- mushroom[train_indx,]
 mushroom_test &lt;- mushroom[-train_indx,]
 
-# 5. 나이브 베이즈 함수를 이용해서 독버섯과 일반 버섯을 분류하는 모델을 생성한다.
+# 규칙기반 알고리즘인 RWeka를 이용해서 독버섯과 일반버섯을 분류하는 모델 생성
+# install.packages(&quot;RWeka&quot;)
 
-library(e1071)
+colnames(mushroom)</code></pre>
+<pre><code>##  [1] &quot;type&quot;                     &quot;cap_shape&quot;               
+##  [3] &quot;cap_surface&quot;              &quot;cap_color&quot;               
+##  [5] &quot;bruises&quot;                  &quot;odor&quot;                    
+##  [7] &quot;gill_attachment&quot;          &quot;gill_spacing&quot;            
+##  [9] &quot;gill_size&quot;                &quot;gill_color&quot;              
+## [11] &quot;stalk_shape&quot;              &quot;stalk_root&quot;              
+## [13] &quot;stalk_surface_above_ring&quot; &quot;stalk_surface_below_ring&quot;
+## [15] &quot;stalk_color_above_ring&quot;   &quot;stalk_color_below_ring&quot;  
+## [17] &quot;veil_type&quot;                &quot;veil_color&quot;              
+## [19] &quot;ring_number&quot;              &quot;ring_type&quot;               
+## [21] &quot;spore_print_color&quot;        &quot;population&quot;              
+## [23] &quot;habitat&quot;</code></pre>
+<pre class="r"><code>library(RWeka)</code></pre>
+<pre><code>## 
+## Attaching package: 'RWeka'</code></pre>
+<pre><code>## The following object is masked from 'package:OneR':
+## 
+##     OneR</code></pre>
+<pre class="r"><code>model3 &lt;- JRip(type~. , data = mushroom_train)
+model3</code></pre>
+<pre><code>## JRIP rules:
+## ===========
+## 
+## (odor = foul) =&gt; type=poisonous (1641.0/0.0)
+## (gill_size = narrow) and (gill_color = buff) =&gt; type=poisonous (862.0/0.0)
+## (gill_size = narrow) and (odor = pungent) =&gt; type=poisonous (201.0/0.0)
+## (odor = creosote) =&gt; type=poisonous (144.0/0.0)
+## (spore_print_color = green) =&gt; type=poisonous (52.0/0.0)
+## (stalk_surface_above_ring = silky) and (gill_spacing = close) =&gt; type=poisonous (46.0/0.0)
+## (habitat = leaves) and (gill_attachment = free) and (population = clustered) =&gt; type=poisonous (14.0/0.0)
+##  =&gt; type=edible (3133.0/0.0)
+## 
+## Number of Rules : 8</code></pre>
+<pre class="r"><code>summary(model3)</code></pre>
+<pre><code>## 
+## === Summary ===
+## 
+## Correctly Classified Instances        6093              100      %
+## Incorrectly Classified Instances         0                0      %
+## Kappa statistic                          1     
+## Mean absolute error                      0     
+## Root mean squared error                  0     
+## Relative absolute error                  0      %
+## Root relative squared error              0      %
+## Total Number of Instances             6093     
+## 
+## === Confusion Matrix ===
+## 
+##     a    b   &lt;-- classified as
+##  3133    0 |    a = edible
+##     0 2960 |    b = poisonous</code></pre>
+<pre class="r"><code># 7. 이원 교차표로 분류의 최종 결과를 확인한다.
+library(gmodels)
+result3 &lt;- predict(model3, mushroom_test[ , -1])
+          # 실제              예측
+CrossTable(x = mushroom_test[,1], y = result3)</code></pre>
+<pre><code>## 
+##  
+##    Cell Contents
+## |-------------------------|
+## |                       N |
+## | Chi-square contribution |
+## |           N / Row Total |
+## |           N / Col Total |
+## |         N / Table Total |
+## |-------------------------|
+## 
+##  
+## Total Observations in Table:  2031 
+## 
+##  
+##                    | result3 
+## mushroom_test[, 1] |    edible | poisonous | Row Total | 
+## -------------------|-----------|-----------|-----------|
+##             edible |      1075 |         0 |      1075 | 
+##                    |   449.993 |   506.007 |           | 
+##                    |     1.000 |     0.000 |     0.529 | 
+##                    |     1.000 |     0.000 |           | 
+##                    |     0.529 |     0.000 |           | 
+## -------------------|-----------|-----------|-----------|
+##          poisonous |         0 |       956 |       956 | 
+##                    |   506.007 |   568.993 |           | 
+##                    |     0.000 |     1.000 |     0.471 | 
+##                    |     0.000 |     1.000 |           | 
+##                    |     0.000 |     0.471 |           | 
+## -------------------|-----------|-----------|-----------|
+##       Column Total |      1075 |       956 |      2031 | 
+##                    |     0.529 |     0.471 |           | 
+## -------------------|-----------|-----------|-----------|
+## 
+## </code></pre>
+<p><br> <br></p>
+</div>
+<div id="277.--mushrooms.csv----3-----" class="section level4">
+<h4>문제277. (점심시간문제) mushrooms.csv 데이터를 가지고 아래의 3가지 알고리즘 별로 이원교차표를 각각 출력하시오</h4>
+<p><br></p>
+<pre class="r"><code># 1. 데이터 R로 로드
+mushroom &lt;- read.csv(&quot;C:/data/mushrooms.csv&quot;, header = T, stringsAsFactors = F)
+
+# 2. ? 와 '' 비어있는 데이터를 NA로 변경한다.
+# View(mushroom)
+mushroom[which(mushroom$V12 == '?'), 12] &lt;- NA
+
+for (i in (15:23)) {
+  mushroom[which(mushroom[,i] == ''), i] &lt;- NA
+}
+
+# 3. factor로 변환한다.
+
+dim(mushroom)</code></pre>
+<pre><code>## [1] 8124   23</code></pre>
+<pre class="r"><code>for (i in 1:23) {
+  mushroom[,i] &lt;- factor(mushroom[,i])
+}
+
+# str(mushroom)
+
+# 4. 훈련데이터와 테스트 데이터로 나눈다.
+
+set.seed(11)
+
+# 행의 건수 확인
+train_cnt &lt;- round(0.75 * dim(mushroom)[1]) 
+# shuffle 하는 방법 중 하나
+train_indx &lt;- sample(1:dim(mushroom)[1], train_cnt, replace = F)
+
+mushroom_train &lt;- mushroom[train_indx,]
+mushroom_test &lt;- mushroom[-train_indx,]
+
+# 5. 나이브 베이즈 함수를 이용해서 독버섯과 일반 버섯을 분류하는 모델을 생성한다.
+colnames(mushroom)</code></pre>
+<pre><code>##  [1] &quot;type&quot;                     &quot;cap_shape&quot;               
+##  [3] &quot;cap_surface&quot;              &quot;cap_color&quot;               
+##  [5] &quot;bruises&quot;                  &quot;odor&quot;                    
+##  [7] &quot;gill_attachment&quot;          &quot;gill_spacing&quot;            
+##  [9] &quot;gill_size&quot;                &quot;gill_color&quot;              
+## [11] &quot;stalk_shape&quot;              &quot;stalk_root&quot;              
+## [13] &quot;stalk_surface_above_ring&quot; &quot;stalk_surface_below_ring&quot;
+## [15] &quot;stalk_color_above_ring&quot;   &quot;stalk_color_below_ring&quot;  
+## [17] &quot;veil_type&quot;                &quot;veil_color&quot;              
+## [19] &quot;ring_number&quot;              &quot;ring_type&quot;               
+## [21] &quot;spore_print_color&quot;        &quot;population&quot;              
+## [23] &quot;habitat&quot;</code></pre>
+<pre class="r"><code>library(e1071)
 # V1~: label(기준으로 사용), laplace: positive double controlling Laplace smoothing. 
-model1 &lt;- naiveBayes(V1~. , data = mushroom_train, laplace = 0.0001)
+
+model1 &lt;- naiveBayes(type~. , data = mushroom_train, laplace = 0.0001)
 
 result1 &lt;- predict(model1,mushroom_test[, -1])
 # 6. 
 # install.packages(&quot;OneR&quot;)
-library(OneR)
+# library(OneR)
+# detach(&quot;package:RWeka&quot;, unload=TRUE)
 
-model2 &lt;- OneR(V1~. , data = mushroom_train)</code></pre>
-<pre><code>## Warning in bin(data): 137 instance(s) removed due to missing values</code></pre>
-<pre><code>## Warning in OneR.data.frame(x = data, ties.method = ties.method, verbose =
-## verbose, : data contains unused factor levels</code></pre>
-<pre class="r"><code>model2</code></pre>
-<pre><code>## 
-## Call:
-## OneR.formula(formula = V1 ~ ., data = mushroom_train)
-## 
-## Rules:
-## If V6 = a then V1 = e
-## If V6 = c then V1 = p
-## If V6 = f then V1 = p
-## If V6 = l then V1 = e
-## If V6 = n then V1 = e
-## If V6 = p then V1 = p
-## 
-## Accuracy:
-## 3852 of 3870 instances classified correctly (99.53%)</code></pre>
-<pre class="r"><code>summary(model2)</code></pre>
-<pre><code>## 
-## Call:
-## OneR.formula(formula = V1 ~ ., data = mushroom_train)
-## 
-## Rules:
-## If V6 = a then V1 = e
-## If V6 = c then V1 = p
-## If V6 = f then V1 = p
-## If V6 = l then V1 = e
-## If V6 = n then V1 = e
-## If V6 = p then V1 = p
-## 
-## Accuracy:
-## 3852 of 3870 instances classified correctly (99.53%)
-## 
-## Contingency table:
-##      V6
-## V1        a     c     f     l      n     p  Sum
-##   e   * 298     0     0 * 303 * 1959     0 2560
-##   p       0 * 151 * 952     0     18 * 189 1310
-##   Sum   298   151   952   303   1977   189 3870
-## ---
-## Maximum in each column: '*'
-## 
-## Pearson's Chi-squared test:
-## X-squared = 3790.3, df = 5, p-value &lt; 2.2e-16</code></pre>
-<pre class="r"><code># 7. 위에서 생성한 모델과 테스트 데이터로 결과 확인
+model2 &lt;- OneR(type~. , data = mushroom_train)
 
-result2 &lt;- predict(model2, mushroom_test[ , -1])
+# 7. 위에서 생성한 모델과 테스트 데이터로 결과 확인
+
+# result2 &lt;- predict(model2, mushroom_test[ , -1])
 
 # head(result1)
 
 # 7. 이원 교차표로 분류의 최종 결과를 확인한다.
-library(gmodels)
 
+library(RWeka)
+model3 &lt;- JRip(type~. , data = mushroom_train)
+model3</code></pre>
+<pre><code>## JRIP rules:
+## ===========
+## 
+## (odor = foul) =&gt; type=poisonous (1601.0/0.0)
+## (gill_size = narrow) and (gill_color = buff) =&gt; type=poisonous (858.0/0.0)
+## (gill_size = narrow) and (odor = pungent) =&gt; type=poisonous (203.0/0.0)
+## (odor = creosote) =&gt; type=poisonous (140.0/0.0)
+## (spore_print_color = green) =&gt; type=poisonous (51.0/0.0)
+## (stalk_surface_below_ring = scaly) and (stalk_surface_above_ring = silky) =&gt; type=poisonous (47.0/0.0)
+## (habitat = leaves) and (gill_attachment = free) and (population = clustered) =&gt; type=poisonous (13.0/0.0)
+##  =&gt; type=edible (3180.0/0.0)
+## 
+## Number of Rules : 8</code></pre>
+<pre class="r"><code>summary(model3)</code></pre>
+<pre><code>## 
+## === Summary ===
+## 
+## Correctly Classified Instances        6093              100      %
+## Incorrectly Classified Instances         0                0      %
+## Kappa statistic                          1     
+## Mean absolute error                      0     
+## Root mean squared error                  0     
+## Relative absolute error                  0      %
+## Root relative squared error              0      %
+## Total Number of Instances             6093     
+## 
+## === Confusion Matrix ===
+## 
+##     a    b   &lt;-- classified as
+##  3180    0 |    a = edible
+##     0 2913 |    b = poisonous</code></pre>
+<pre class="r"><code>result3 &lt;- predict(model3, mushroom_test[ , -1])
+
+# 7. 이원 교차표로 분류의 최종 결과를 확인한다.
+library(gmodels)
+          # 실제              예측
 CrossTable(x = mushroom_test[,1], y = result1)</code></pre>
 <pre><code>## 
 ##  
@@ -254,26 +561,26 @@ CrossTable(x = mushroom_test[,1], y = result1)</code></pre>
 ## |-------------------------|
 ## 
 ##  
-## Total Observations in Table:  1336 
+## Total Observations in Table:  2031 
 ## 
 ##  
 ##                    | result1 
-## mushroom_test[, 1] |         e |         p | Row Total | 
+## mushroom_test[, 1] |    edible | poisonous | Row Total | 
 ## -------------------|-----------|-----------|-----------|
-##                  e |       876 |         0 |       876 | 
-##                    |   155.791 |   299.650 |           | 
-##                    |     1.000 |     0.000 |     0.656 | 
-##                    |     0.997 |     0.000 |           | 
-##                    |     0.656 |     0.000 |           | 
+##             edible |      1017 |        11 |      1028 | 
+##                    |   485.636 |   489.959 |           | 
+##                    |     0.989 |     0.011 |     0.506 | 
+##                    |     0.997 |     0.011 |           | 
+##                    |     0.501 |     0.005 |           | 
 ## -------------------|-----------|-----------|-----------|
-##                  p |         3 |       457 |       460 | 
-##                    |   296.679 |   570.637 |           | 
-##                    |     0.007 |     0.993 |     0.344 | 
-##                    |     0.003 |     1.000 |           | 
-##                    |     0.002 |     0.342 |           | 
+##          poisonous |         3 |      1000 |      1003 | 
+##                    |   497.740 |   502.171 |           | 
+##                    |     0.003 |     0.997 |     0.494 | 
+##                    |     0.003 |     0.989 |           | 
+##                    |     0.001 |     0.492 |           | 
 ## -------------------|-----------|-----------|-----------|
-##       Column Total |       879 |       457 |      1336 | 
-##                    |     0.658 |     0.342 |           | 
+##       Column Total |      1020 |      1011 |      2031 | 
+##                    |     0.502 |     0.498 |           | 
 ## -------------------|-----------|-----------|-----------|
 ## 
 ## </code></pre>
@@ -290,34 +597,121 @@ CrossTable(x = mushroom_test[,1], y = result1)</code></pre>
 ## |-------------------------|
 ## 
 ##  
-## Total Observations in Table:  1336 
+## Total Observations in Table:  2031 
 ## 
 ##  
 ##                    | result2 
-## mushroom_test[, 1] |         e |         p |    UNSEEN | Row Total | 
-## -------------------|-----------|-----------|-----------|-----------|
-##                  e |       876 |         0 |         0 |       876 | 
-##                    |   147.371 |   283.913 |     9.180 |           | 
-##                    |     1.000 |     0.000 |     0.000 |     0.656 | 
-##                    |     0.985 |     0.000 |     0.000 |           | 
-##                    |     0.656 |     0.000 |     0.000 |           | 
-## -------------------|-----------|-----------|-----------|-----------|
-##                  p |        13 |       433 |        14 |       460 | 
-##                    |   280.645 |   540.669 |    17.481 |           | 
-##                    |     0.028 |     0.941 |     0.030 |     0.344 | 
-##                    |     0.015 |     1.000 |     1.000 |           | 
-##                    |     0.010 |     0.324 |     0.010 |           | 
-## -------------------|-----------|-----------|-----------|-----------|
-##       Column Total |       889 |       433 |        14 |      1336 | 
-##                    |     0.665 |     0.324 |     0.010 |           | 
-## -------------------|-----------|-----------|-----------|-----------|
+## mushroom_test[, 1] |    edible | poisonous | Row Total | 
+## -------------------|-----------|-----------|-----------|
+##             edible |      1028 |         0 |      1028 | 
+##                    |   446.170 |   489.958 |           | 
+##                    |     1.000 |     0.000 |     0.506 | 
+##                    |     0.967 |     0.000 |           | 
+##                    |     0.506 |     0.000 |           | 
+## -------------------|-----------|-----------|-----------|
+##          poisonous |        35 |       968 |      1003 | 
+##                    |   457.291 |   502.170 |           | 
+##                    |     0.035 |     0.965 |     0.494 | 
+##                    |     0.033 |     1.000 |           | 
+##                    |     0.017 |     0.477 |           | 
+## -------------------|-----------|-----------|-----------|
+##       Column Total |      1063 |       968 |      2031 | 
+##                    |     0.523 |     0.477 |           | 
+## -------------------|-----------|-----------|-----------|
 ## 
 ## </code></pre>
-<pre class="r"><code>          # 실제              예측</code></pre>
-<ol start="2" style="list-style-type: decimal">
-<li>Riper 알고리즘 “복수개의 사실(조건)을 가지고 분류하는 알고리즘”</li>
-</ol>
-<p>예. 하늘을 날고 털이 있다면, 땅을 걷고 털이 있다면 포유류이다.</p>
+<pre class="r"><code>CrossTable(x = mushroom_test[,1], y = result3)</code></pre>
+<pre><code>## 
+##  
+##    Cell Contents
+## |-------------------------|
+## |                       N |
+## | Chi-square contribution |
+## |           N / Row Total |
+## |           N / Col Total |
+## |         N / Table Total |
+## |-------------------------|
+## 
+##  
+## Total Observations in Table:  2031 
+## 
+##  
+##                    | result3 
+## mushroom_test[, 1] |    edible | poisonous | Row Total | 
+## -------------------|-----------|-----------|-----------|
+##             edible |      1028 |         0 |      1028 | 
+##                    |   495.327 |   507.673 |           | 
+##                    |     1.000 |     0.000 |     0.506 | 
+##                    |     1.000 |     0.000 |           | 
+##                    |     0.506 |     0.000 |           | 
+## -------------------|-----------|-----------|-----------|
+##          poisonous |         0 |      1003 |      1003 | 
+##                    |   507.673 |   520.327 |           | 
+##                    |     0.000 |     1.000 |     0.494 | 
+##                    |     0.000 |     1.000 |           | 
+##                    |     0.000 |     0.494 |           | 
+## -------------------|-----------|-----------|-----------|
+##       Column Total |      1028 |      1003 |      2031 | 
+##                    |     0.506 |     0.494 |           | 
+## -------------------|-----------|-----------|-----------|
+## 
+## </code></pre>
+<p><br> <br></p>
+</div>
+<div id="278.------" class="section level4">
+<h4>문제278. 규칙기반 알고리즘을 활용하는 자동화 스크립트를 생성하시오</h4>
+<p><br></p>
+<pre class="r"><code>OneR_JRip_fun &lt;- function() {
+  library(RWeka)
+  library(gmodels)
+  
+  rm()
+  setwd(&quot;C:/data&quot;)
+  x3 &lt;- menu( c(&quot;OneR&quot;,&quot;JRip&quot;) ,
+              title ='원하는 그래프를 선택하세요 ')
+  
+   print(&quot;분석할 csv파일명을 입력하세요 &quot;)
+  data&lt;-file.choose()
+  
+  table1 &lt;- read.csv(data, header = T)
+
+  col &lt;- menu(colnames(table1), title = &quot;라벨이 될 컬럼 이름을 입력하세요 &quot;)
+
+  col1 &lt;- colnames(table1)[col]
+
+
+  set.seed(1)
+  
+  # 행의 건수 확인
+  train_cnt &lt;- round(0.75 * dim(table1)[1]) 
+  # shuffle 하는 방법 중 하나
+  train_indx &lt;- sample(1:dim(table1)[1], train_cnt, replace = F)
+  
+  table_train &lt;- table1[train_indx,]
+  table_test &lt;- table1[-train_indx,]
+  
+  
+  library(RWeka)
+  
+  switch(x3,
+         OneR = {
+                          # formula : 함수식
+           model1 &lt;- OneR(as.formula(paste(col1,&quot;~.&quot;)) , data = table_train)
+         },
+         JRip = {
+           model1 &lt;- JRip(as.formula(paste(col1,&quot;~.&quot;)), data = table_train)
+         }
+         )
+
+
+  # 예측하기
+  result1 &lt;- predict(model1, table_test[, -col])
+  
+  # 이원 교차표로 분류의 최종 결과를 확인한다.
+  
+  CrossTable(x = table_test[,col], y = result1)
+            # 실제              예측
+}</code></pre>
 </div>
 </div>
 

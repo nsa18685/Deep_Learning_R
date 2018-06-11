@@ -245,16 +245,16 @@ model_result &lt;- compute(con_model, con_test[-ncol])
 predict_strength &lt;- model_result$net.result
 summary(model_result$net.result)</code></pre>
 <pre><code>##        V1            
-##  Min.   :0.05497766  
-##  1st Qu.:0.27298607  
-##  Median :0.45907374  
-##  Mean   :0.42664577  
-##  3rd Qu.:0.57119432  
-##  Max.   :0.67451760</code></pre>
+##  Min.   :0.06177111  
+##  1st Qu.:0.27482166  
+##  Median :0.45691058  
+##  Mean   :0.42696965  
+##  3rd Qu.:0.57107527  
+##  Max.   :0.67312717</code></pre>
 <pre class="r"><code># 8. 예측값과 실제값간의 상관관계 확인
 cor(model_result$net.result, con_test$strength)</code></pre>
-<pre><code>##              [,1]
-## [1,] 0.8068063241</code></pre>
+<pre><code>##            [,1]
+## [1,] 0.80573033</code></pre>
 <pre class="r"><code># 9. 모델성능개선
 con_model1 &lt;- neuralnet(formula=strength ~ cement + slag + ash + water +superplastic + coarseagg  + fineagg  + age, data =con_train, hidden = c(5,2))
 
@@ -263,18 +263,606 @@ model_result1 &lt;- compute(con_model1, con_test[-ncol])
 predict_strength1 &lt;- model_result1$net.result
 summary(model_result1$net.result)</code></pre>
 <pre><code>##        V1            
-##  Min.   :0.02683783  
-##  1st Qu.:0.28084604  
-##  Median :0.41601853  
-##  Mean   :0.42105634  
-##  3rd Qu.:0.52614669  
-##  Max.   :0.92667909</code></pre>
+##  Min.   :0.07139277  
+##  1st Qu.:0.27685899  
+##  Median :0.41346921  
+##  Mean   :0.42344883  
+##  3rd Qu.:0.55896517  
+##  Max.   :0.96128452</code></pre>
 <pre class="r"><code>summary(con_test$strength)</code></pre>
 <pre><code>##       Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
 ## 0.03052199 0.26775258 0.41030273 0.42254774 0.53120718 1.00000000</code></pre>
 <pre class="r"><code>cor(predict_strength1, con_test$strength)</code></pre>
 <pre><code>##              [,1]
-## [1,] 0.9276417377</code></pre>
+## [1,] 0.9316421367</code></pre>
+</div>
+<div id="2.----wine-data-ann" class="section level4">
+<h4>실습2. 회귀분석 시 사용한 wine data로 ANN</h4>
+<pre class="r"><code># 1. data load
+wine &lt;- read.csv(&quot;C:/data/whitewines.csv&quot;, header = T)
+
+head(wine)</code></pre>
+<pre><code>##   fixed.acidity volatile.acidity citric.acid residual.sugar chlorides
+## 1           6.7             0.62        0.24           1.10     0.039
+## 2           5.7             0.22        0.20          16.00     0.044
+## 3           5.9             0.19        0.26           7.40     0.034
+## 4           5.3             0.47        0.10           1.30     0.036
+## 5           6.4             0.29        0.21           9.65     0.041
+## 6           7.0             0.14        0.41           0.90     0.037
+##   free.sulfur.dioxide total.sulfur.dioxide density   pH sulphates
+## 1                   6                   62 0.99340 3.41      0.32
+## 2                  41                  113 0.99862 3.22      0.46
+## 3                  33                  123 0.99500 3.49      0.42
+## 4                  11                   74 0.99082 3.48      0.54
+## 5                  36                  119 0.99334 2.99      0.34
+## 6                  22                   95 0.99140 3.25      0.43
+##       alcohol quality
+## 1 10.40000000       5
+## 2  8.90000000       6
+## 3 10.10000000       6
+## 4 11.20000000       4
+## 5 10.93333333       6
+## 6 10.90000000       6</code></pre>
+<pre class="r"><code># 2. normalization
+normalize &lt;- function(x) {
+  return ( (x-min(x)) / (max(x) - min(x)) ) 
+}
+
+wine_no &lt;- as.data.frame(lapply(wine,normalize))
+
+#정규화한 데이터와 원본데이터 비교
+summary(wine_no$quality)</code></pre>
+<pre><code>##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+## 0.0000000 0.3333333 0.5000000 0.4796516 0.5000000 1.0000000</code></pre>
+<pre class="r"><code>summary(wine$quality)</code></pre>
+<pre><code>##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+## 3.000000 5.000000 6.000000 5.877909 6.000000 9.000000</code></pre>
+<pre class="r"><code># 3. trainin데이터, test데이터 나눈다.
+
+div &lt;- round(nrow(wine_no) * 0.75)
+wine_train &lt;- wine_no[1:div,]
+wine_test &lt;- wine_no[(div+1):nrow(wine_no),]
+
+# 4. neuralnet 패키지를 설치한다.
+# install.packages(&quot;neuralnet&quot;)
+library(neuralnet)
+
+# 5. 모델(신경망) 생성하기
+attach(wine_train)
+wine_model &lt;- neuralnet(formula= quality ~ fixed.acidity + volatile.acidity + citric.acid + residual.sugar + chlorides + free.sulfur.dioxide + total.sulfur.dioxide + density + pH + sulphates + alcohol, data =wine_train)
+
+# 6. 모델 시각화
+plot(wine_model)
+  
+# 7. 테스트 데이터로 모델성능 테스트
+ncol &lt;- which(colnames(wine_test) == &quot;quality&quot;)
+wine_mresult &lt;- compute(wine_model, wine_test[-ncol])
+
+predict_strength &lt;- wine_mresult$net.result
+summary(wine_mresult$net.result)</code></pre>
+<pre><code>##        V1           
+##  Min.   :0.2359992  
+##  1st Qu.:0.4186111  
+##  Median :0.4722905  
+##  Mean   :0.4759002  
+##  3rd Qu.:0.5353439  
+##  Max.   :0.6691352</code></pre>
+<pre class="r"><code># 8. 예측값과 실제값간의 상관관계 확인
+cor(predict_strength, wine_test$quality)</code></pre>
+<pre><code>##              [,1]
+## [1,] 0.5656728135</code></pre>
+<pre class="r"><code># 9. 모델성능개선
+wine_model1 &lt;- neuralnet(formula=quality ~ fixed.acidity + volatile.acidity + citric.acid + residual.sugar + chlorides + free.sulfur.dioxide + total.sulfur.dioxide + density + pH + sulphates + alcohol, data =wine_train, hidden = c(5,2))
+
+plot(wine_model1)
+
+wine_model_result1 &lt;- compute(wine_model1, wine_test[-ncol])
+
+predict_strength1 &lt;- wine_model_result1$net.result
+summary(wine_model_result1$net.result)</code></pre>
+<pre><code>##        V1           
+##  Min.   :0.1195566  
+##  1st Qu.:0.4072666  
+##  Median :0.4750024  
+##  Mean   :0.4791492  
+##  3rd Qu.:0.5481627  
+##  Max.   :0.8584300</code></pre>
+<pre class="r"><code>summary(wine_test$quality)</code></pre>
+<pre><code>##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+## 0.0000000 0.3333333 0.5000000 0.4829793 0.5000000 1.0000000</code></pre>
+<pre class="r"><code>cor(predict_strength1, wine_test$quality)</code></pre>
+<pre><code>##              [,1]
+## [1,] 0.6300622277</code></pre>
+</div>
+<div id="--" class="section level4">
+<h4>자동화 스크립트 완성하기</h4>
+<pre class="r"><code>my_r_func &lt;- function() {
+  rm()
+  y &lt;- &quot; ######################################################### \n # 1. 막대그래프              11. Decision Tree 머신러닝 \n # 2. 원형그래프              12. 규칙기반 oneR/Jriper        \n # 3. 산포도 그래프          13. 단순 회귀        \n # 4. 워드 클라우드                          # 14. 신경망(ANN)                                    \n # 5. 사분위수 그래프                                    \n # 6. 분산과 표준편차                                    \n # 7. 정규분포와 히스토그램                              \n # 8. 산포도와 회귀직선                                  \n # 9. knn 머신러닝                                       \n # 10. naive bayes 머신러닝                              \n ######################################################### &quot;
+  cat(y)
+  
+  ########### 1. 패키지 설치
+  # 현재 컴퓨터에 필요한 패키지 설치
+  # 만약 패키지가 존재하지 않는 경우에만 설치
+  
+  packages &lt;- c(&quot;XML&quot;,&quot;stringr&quot;,&quot;rJava&quot;,&quot;KoNLP&quot;,&quot;wordcloud&quot;,&quot;lubridate&quot;,&quot;data.table&quot;,&quot;e1071&quot;,&quot;plyr&quot;,&quot;outliers&quot;,&quot;FSelector&quot;,&quot;gmodels&quot;,&quot;fBasics&quot;,&quot;fBasics&quot;,&quot;class&quot;,&quot;rpart&quot;,&quot;stats&quot;,&quot;RWeka&quot;)
+  
+  if (length(setdiff(packages, rownames(installed.packages()))) &gt; 0) {
+    install.packages(setdiff(packages, rownames(installed.packages())))  
+  }
+  
+  library(data.table)
+  # x3 &lt;- menu( c(&quot;막대그래프&quot;, &quot;원형그래프&quot;, &quot;산포도 그래프&quot;, &quot;워드 클라우드&quot;, &quot;사분위수 그래프&quot;, &quot;분산과 표준편차&quot;,&quot;정규분포와 히스토그램&quot;,&quot;산포도와 회귀직선&quot;
+  #               &quot;knn 머신러닝&quot;, &quot;naive bayes 머신러닝&quot;,&quot;Decision Tree 머신러닝&quot;,&quot;규칙기반 oneR/Jriper&quot;,&quot;단순 회귀&quot;) ,
+  #             title ='원하는 그래프를 선택하세요 ', graphics=T)
+  x3 &lt;- as.numeric(readline(prompt = &quot;원하는 그래프를 선택하세요&quot;))
+  switch(x3, 
+         barchart={
+           table &lt;- get(readline(prompt = &quot;테이블을 입력하세요~ &quot;))
+           x  &lt;- menu( colnames(table) , title ='sum할 컬럼명(number)을 입력하세요 ')
+           x1 &lt;- menu( colnames(table) , title ='기준이될 컬럼명을 입력하세요 ')
+           x2 &lt;- menu( colnames(table) , title ='그루핑할 컬럼을 입력하세요 ')
+           y &lt;- tapply(table[, x], list(table[,x2], table[,x1]), sum)
+           y[is.na(y)] &lt;- 0
+           
+           barplot(y, col = rainbow(length(y)), beside = T)
+           legend(&quot;topright&quot;, fill = rainbow(14), legend = rownames(y))
+           
+         },
+         piechart={
+           table &lt;- get(readline(prompt = &quot;테이블을 입력하세요~ &quot;))
+           x  &lt;- menu( colnames(table) , title ='sum할 컬럼명(number)을 입력하세요 ')
+           x1 &lt;- menu( colnames(table) , title ='기준이될 컬럼명을 입력하세요 ')
+           
+           z &lt;- tapply(table[,x], table[,x1], sum)
+           
+           rate &lt;- round( z / sum(table[,x]) * 100, 1)
+           pie(z, col= rainbow(length(names(z))), main = &quot;Salary Pie Chart&quot;, 
+               labels = paste(names(z), rate,'%'))
+           
+         },
+         plot = {
+           table &lt;- get(readline(prompt = &quot;테이블을 입력하세요~ &quot;))
+           x1 &lt;- menu(colnames(table) , title ='x축이될 컬럼명을 입력하세요 ')
+           x2 &lt;- menu(colnames(table) , title ='y축이될 컬럼명을 입력하세요 ')
+           
+           plot(table[,x1], table[,x2], xlab = colnames(table[x1]),
+                ylab = colnames(table[x2]), pch = '★', col ='Violet')
+         },
+         wordcloud = {
+           data &lt;- file.choose()
+           file &lt;- readLines(data)
+           
+           library(KoNLP)
+           library(wordcloud)
+           library(plyr)
+           
+           useSejongDic()
+           nouns &lt;- sapply(file, extractNoun, USE.NAMES = F)
+           
+           nouns &lt;- unlist(nouns)
+           # data 형식을 vector로 바꿈
+           
+           nouns &lt;- nouns[nchar(nouns)&gt;= 2]
+           
+           cnouns &lt;- count(nouns)
+           
+           pal &lt;- brewer.pal(6,&quot;Dark2&quot;)
+           
+           pal &lt;- pal[-(1)]
+           
+           x11()
+           
+           wordcloud(words=cnouns$x, freq=cnouns$freq, colors=pal, min.freq=5,
+                     random.order=F)
+         },
+         boxplot = {
+           table &lt;- get(readline(prompt = &quot;테이블명을 입력하세요~ &quot;))
+           x  &lt;- menu( colnames(table) , title ='컬럼명을 입력하세요 ')
+           
+           boxplot(table[,x], horizontal = T)
+         },
+         var = {
+           table &lt;- get(readline(prompt = &quot;분산을 시각화할 테이블명을 입력하시오 &quot;))
+           col &lt;- menu(colnames(table), title = '분산을 시각화할 컬럼을 선택하세요.')
+           x &lt;- table[,col]
+           cnt &lt;- length(x)
+           plot( x, main = paste(&quot;분산 =&quot;, round(var(x),3), &quot;표준편차 =&quot;, round(sd(x),3)),
+                 col = &quot;Navy Blue&quot;,ylab = colnames(table[col]))
+           lines(rep(mean(x),cnt), type = &quot;l&quot;, col = &quot;Violet Red&quot;)
+         },
+         hist = {
+           table &lt;- get(readline(prompt = &quot;정규분포 곡선을 그릴 테이블 명을 입력하세요 &quot;))
+           col &lt;- menu(colnames(table), title = &quot;정규분포곡선을 그릴 컬럼명을 입력하세요 &quot;)
+           
+           col &lt;- table[order(table[col], decreasing = F), col]
+           
+           hist(col, col = topo.colors(8, alpha=0.7),ann = FALSE)
+           par(new = T)
+           plot(col, dnorm(col, mean = mean(col), sd = sd(col)), type = &quot;l&quot;, 
+                main = paste(round(skewness(col),3),&quot;정규분포 그래프&quot;),ylab = &quot;도수&quot;,
+                axes = FALSE)
+         },
+         plot2 = {
+           table_name &lt;- readline(prompt = &quot;산포도 그래프를 그릴 테이블 명을 입력하세요 &quot;)
+           table &lt;- get(table_name)
+           x_axis &lt;- menu(colnames(table), title = &quot;x 축 데이터를 입력하세요 &quot;)
+           y_axis &lt;- menu(colnames(table), title = &quot;y 축 데이터를 입력하세요 &quot;)
+           
+           plot(table[,x_axis], table[,y_axis], main = paste(table_name, &quot;산포도그래프&quot;),
+                xlab = colnames(table[x_axis]), ylab = colnames(table[y_axis]))
+           model&lt;- lm(table[,y_axis]~table[,x_axis])
+           abline(model,col='red')
+         },
+         knn = {
+           
+           setwd(&quot;C:/data&quot;)
+           # 
+           # data &lt;- readline(&quot;분석할 csv파일명을 입력하세요 &quot;)
+           # 
+           print(&quot;분석할 csv파일명을 입력하세요&quot;)
+           data&lt;-file.choose()
+           
+           table1 &lt;- na.omit(read.csv(data, stringsAsFactors = FALSE))
+           
+           col &lt;- menu(colnames(table1), title = &quot;라벨이 될 컬럼 이름을 입력하세요 &quot;)
+           
+           col_n &lt;- menu(colnames(table1), title = &quot;제거할 컬럼 이름을 입력하세요 &quot;)
+           
+           # colname으로 받아야함
+           col1 &lt;- colnames(table1)[col]
+           
+           normalize &lt;- function(x) {
+             return( (x-min(x))/ ( max(x)-min(x)))
+           }
+           
+           # 불필요한 컬럼 삭제하기
+           table1 &lt;- table1[-col_n]
+           
+           # which : column이 위치한 숫자가 출력
+           ncol &lt;- which(colnames(table1) == col1)
+           
+           # 정규화
+           table_n &lt;- as.data.frame(lapply(table1[, -ncol],normalize))
+           
+           # z_score 표준화로 대체 사용가능
+           # table_z &lt;- as.data.frame(scale(table1[-ncol]))
+           
+           # training data 와 test data 바꾸기
+           mm&lt;-round(nrow(table_n) * 9/10)
+           
+           table_train &lt;- table_n[1:mm, ]
+           table_test  &lt;- table_n[(mm+1):nrow(table_n), ]
+           
+           table_train_label &lt;- table1[1:mm, col1]
+           table_test_label  &lt;- table1[(mm+1):nrow(table_n), col1]
+           
+           
+           # k 값 자동 생성
+           
+           library(caret)
+           
+           library(e1071)
+           
+           repeats = 20
+           
+           numbers = 10
+           
+           tunel = 10
+           
+           # &quot;데이터가 부정확, 불완전 또는 불합리한가 어떤가를 확인하기 위해서 사용되는 처리&quot;
+           set.seed(1234)
+           x = trainControl(method = &quot;repeatedcv&quot;,
+                            
+                            number = numbers,
+                            
+                            repeats = repeats,
+                            
+                            classProbs = TRUE,
+                            
+                            summaryFunction = twoClassSummary)
+           
+           
+           # normalize에서 label이 사라짐 -&gt; cbind로 묶음
+           
+           model1 &lt;- train(label~. , data = cbind(label = table_train_label, table_train), method = &quot;knn&quot;,
+                           
+                           preProcess = c(&quot;center&quot;,&quot;scale&quot;),
+                           
+                           trControl = x,
+                           
+                           metric = &quot;ROC&quot;,
+                           
+                           tuneLength = tunel)
+           
+           
+           
+           # Summary of model
+           k_n &lt;- max(model1$bestTune)
+           
+           
+           # knn 알고리즘
+           library(class)
+           
+           result1 &lt;- knn(train=table_train, test=table_test, cl= table_train_label, k = k_n )
+           
+           # 확률구하기
+           prop.table( table(ifelse(table1[(mm+1):nrow(table_n), col1]==result1,&quot;o&quot;,&quot;x&quot; )))
+           
+           # 이원교차표
+           library(gmodels)
+           
+           CrossTable( x= table_test_label, y= result1, prop.chisq=FALSE)
+           
+           
+           
+           # 예측할 환자정보
+           print(&quot;예측할 환자정보를 입력하세요.&quot;)
+           patient &lt;- file.choose()
+           table2 &lt;- na.omit(read.csv(patient))
+           
+           
+           # rbind 해서 normalize하면 안됨. 트레이닝은 전체 테이터로만 해야 함.
+           col2 &lt;- colnames(table2)[col]
+           
+           table2 &lt;- table2[-col_n]
+           
+           # print(table2)
+           ncol &lt;- which(colnames(table2) == col2)
+           table_test2 &lt;- table2[,-ncol]
+           table_test2 &lt;- normalize(table_test2)
+           
+           # print(table_test2)
+           
+           result2 &lt;- knn(train=table_train, test = table_test2, cl= table_train_label, k = k_n )
+           
+           return(paste(result2,&quot;(으)로 예측됩니다&quot;))
+         },
+         naive_bayes = {
+           
+           setwd(&quot;C:/data&quot;)
+           
+           print(&quot;분석할 csv파일명을 입력하세요 &quot;)
+           data&lt;-file.choose()
+           
+           na.string &lt;- NA
+           
+           table1 &lt;- read.csv(data, stringsAsFactors = F, header = F, na.string = na.string)
+           
+           col &lt;- menu(colnames(table1), title = &quot;라벨이 될 컬럼 이름을 입력하세요 &quot;)
+           
+           col1 &lt;- menu(colnames(table1), title = &quot;수정할 컬럼 이름을 입력하세요 &quot;)
+           
+           ch1 &lt;- readline(prompt = &quot;제거할 문자를 입력하세요 &quot;)
+           
+           lap &lt;- readline(prompt = &quot;laplace값을 입력하세요 &quot;)
+           
+           # data 정제
+           
+           table1[which(table1[,col1] == ch1), nrow(table)] &lt;- NA
+           
+           # 3. factor로 변환한다.
+           
+           for (i in 1:dim(table1)[2]) {
+             table1[,i] &lt;- factor(table1[,i])
+           }
+           
+           # 4. 훈련데이터와 테스트 데이터로 나눈다.
+           
+           set.seed(1)
+           
+           # 행의 건수 확인
+           train_cnt &lt;- round(0.75 * dim(table1)[1]) 
+           # shuffle 하는 방법 중 하나
+           train_indx &lt;- sample(1:dim(table1)[1], train_cnt, replace = F)
+           
+           table_train &lt;- table1[train_indx,]
+           table_test &lt;- table1[-train_indx,]
+           
+           # 5. 나이브 베이즈 함수를 이용해서 독버섯과 일반 버섯을 분류하는 모델을 생성한다.
+           
+           library(e1071)
+           # V1~: label(기준으로 사용), laplace: positive double controlling Laplace smoothing.
+           # laplace로 공격적으로 필터링하는 정도를 조절할 수 있음
+           model1 &lt;- naiveBayes(table_train[,col]~. , data = table_train, laplace = as.numeric(lap))
+           
+           # 생성된 분류모델
+           model1
+           
+           # 6. 모델로 테스트 데이터로 정확도 측성한다.
+           # 예측하기
+           result1 &lt;- predict(model1, table_test[, -col])
+           # head(result1)
+           
+           # 7. 이원 교차표로 분류의 최종 결과를 확인한다.
+           library(gmodels)
+           
+           CrossTable(x = table_test[,col], y = result1)
+           # 실제              예측
+         },
+         Decision_Tree = {
+           
+           print(&quot;분석할 csv파일을 입력하세요 &quot;)
+           data &lt;- file.choose()
+           na.string &lt;- NA
+           # 연속형데이터는 factor로 변환하면....안돼
+           table1 &lt;- read.csv(data, header = T, na.string = na.string)
+           
+           d_col &lt;- menu(c(colnames(table1),'non'), title=&quot;삭제할 컬럼을 선택하시오 &quot;)
+           
+           table1 &lt;- table1[,-d_col]
+           
+           l_col &lt;- menu(colnames(table1), title=&quot;label이 될 컬럼을 선택하시오 &quot;)
+           trials &lt;- readline(prompt = &quot;trials 값을 입력하세요 &quot;)
+           
+           # 분석 쿼리
+           library(C50)
+           library(gmodels)
+           library(rpart)
+           library(rattle)
+           
+           
+           # 조절할 것1_set.seed()
+           set.seed(11)
+           table_shuffle &lt;- table1[sample(nrow(table1)),]
+           
+           
+           train_num &lt;- round(0.7*nrow(table_shuffle),0)
+           table_train &lt;- table_shuffle[1:train_num, ]
+           table_test &lt;- table_shuffle[(train_num +1): nrow(table_shuffle), ]
+           
+           l_col &lt;-  colnames(table1)[l_col]
+           ncol1 &lt;- which(colnames(table1) == l_col)
+           
+           # 조절할 것2_trials:laplace와 비슷
+           model &lt;- C5.0(table_train[ ,-ncol1], table_train[ ,ncol1], trials = as.numeric(trials))
+           result &lt;- predict(model, table_test[ ,-ncol1])
+           
+           CrossTable(x = table_test[,ncol1], y= result)
+           
+           # as.formula와 paste로 ~.을 붙여야한다.
+           tree &lt;- rpart(label~. , data=data.frame(table1[,-ncol1], label = table1[,l_col]),
+                         control=rpart.control(minsplit=2))
+           fancyRpartPlot(tree,palettes = c(&quot;Greys&quot;,&quot;RdPu&quot;))
+         },
+         rule_based = {
+           library(RWeka)
+           library(gmodels)
+           
+           rm()
+           setwd(&quot;C:/data&quot;)
+           x3 &lt;- menu( c(&quot;OneR&quot;,&quot;JRip&quot;) ,
+                       title ='원하는 그래프를 선택하세요 ')
+           
+           print(&quot;분석할 csv파일명을 입력하세요 &quot;)
+           data&lt;-file.choose()
+           
+           table1 &lt;- read.csv(data, header = T)
+           
+           col &lt;- menu(colnames(table1), title = &quot;라벨이 될 컬럼 이름을 입력하세요 &quot;)
+           
+           col1 &lt;- colnames(table1)[col]
+           
+           
+           set.seed(1)
+           
+           # 행의 건수 확인
+           train_cnt &lt;- round(0.75 * dim(table1)[1]) 
+           # shuffle 하는 방법 중 하나
+           train_indx &lt;- sample(1:dim(table1)[1], train_cnt, replace = F)
+           
+           table_train &lt;- table1[train_indx,]
+           table_test &lt;- table1[-train_indx,]
+           
+           
+           library(RWeka)
+           
+           switch(x3,
+                  OneR = {
+                    # formula : 함수식
+                    model1 &lt;- OneR(as.formula(paste(col1,&quot;~.&quot;)) , data = table_train)
+                  },
+                  JRip = {
+                    model1 &lt;- JRip(as.formula(paste(col1,&quot;~.&quot;)), data = table_train)
+                  }
+           )
+           
+           
+           # 예측하기
+           result1 &lt;- predict(model1, table_test[, -col])
+           
+           # 이원 교차표로 분류의 최종 결과를 확인한다.
+           
+           CrossTable(x = table_test[,col], y = result1)
+         },
+         linear_regression ={
+           library(stats)
+           # 1. 데이터를 R로 로드한다.
+           data&lt;-file.choose()
+           
+           table1 &lt;- read.csv(data, header = T)
+           
+           col1 &lt;- menu(colnames(table1), title = &quot;독립변수가 될 컬럼 이름을 입력하세요 &quot;)
+           col1
+           col2 &lt;- menu(colnames(table1), title = &quot;종속변수가 될 컬럼 이름을 입력하세요 &quot;)
+           
+           col1 &lt;- colnames(table1)[col1]
+           col1
+           col2 &lt;- colnames(table1)[col2]
+           # 2. 데이터를 가지고 plot 그래프를 그린다.
+           
+           # 3. 데이터에 맞는 회귀모델을 만든다.
+           attach(table1)
+           # y 축 ~ x 축
+           model &lt;- lm(as.formula(paste(col2,&quot;~&quot;,col1)))
+           r_squar &lt;- round(summary(model)$r.squared,3)
+           plot(as.formula(paste(col2,&quot;~&quot;,col1)), data = table1, col = &quot;Hot Pink&quot;, bg = &quot;red&quot;,
+                main = paste(&quot;y =&quot;, round(model$coefficients[2],3),&quot;x +&quot;,round(model$coefficients[1],3), 
+                             &quot;r-squar :&quot;,r_squar))
+           abline(model, col = &quot;blue&quot;, lwd = 3)
+           
+         },
+         ann = {
+            # 1. data load
+           data&lt;-file.choose()
+           
+           table1 &lt;- read.csv(data, header = T)
+           
+           col1 &lt;- menu(colnames(table1), title = &quot;label이 될 컬럼 이름을 입력하세요 &quot;)
+            
+            # 2. normalization
+            normalize &lt;- function(x) {
+              return ( (x-min(x)) / (max(x) - min(x)) ) 
+            }
+            
+            table1_no &lt;- as.data.frame(lapply(table1,normalize))
+            
+            #정규화한 데이터와 원본데이터 비교
+            summary(table1_no$quality)
+            summary(table1$quality)
+            
+            # 3. trainin데이터, test데이터 나눈다.
+            
+            div &lt;- round(nrow(table1_no) * 0.75)
+            table1_train &lt;- table1_no[1:div,]
+            table1_test &lt;- table1_no[(div+1):nrow(table1_no),]
+            
+            # 4. neuralnet 패키지를 설치한다.
+            # install.packages(&quot;neuralnet&quot;)
+            library(neuralnet)
+            
+            # 5. 모델(신경망) 생성하기
+            attach(table1_train)
+            col1 &lt;- colnames(table1_train)[col1]
+            d &lt;- paste(col1,&quot;~&quot;,step = &quot;&quot;)
+            for (i in 1: (length(colnames(table1))-1)){
+              c &lt;- colnames(table1)[i]
+              d &lt;- paste(d,&quot;+&quot;,c,step = &quot;&quot;)
+            }
+            table1_model &lt;- neuralnet(formula= as.formula(d), data =table1_train, hidden = c(5,2))
+            
+            # Y_var &lt;- names(wine_train)[12]
+            # X_var &lt;- paste(names(wine_train)[-12], collapse = ' + ')
+            # 
+            # wine_formula &lt;- as.formula(paste(Y_var, '~', X_var))
+            # wine_model &lt;- neuralnet(formula = wine_formula , data = wine_train )
+            
+            # 6. 모델 시각화
+            plot(table1_model)
+              
+            # 7. 테스트 데이터로 모델성능 테스트
+            ncol &lt;- which(colnames(table1_test) == col1)
+            table1_result &lt;- compute(table1_model, table1_test[-ncol])
+            
+            predict_strength &lt;- table1_result$net.result
+            # summary(table1_result[net.result])
+            # 8. 예측값과 실제값간의 상관관계 확인
+            cor(predict_strength, table1_test[ncol])
+           }
+  )
+  
+}
+# my_r_func()</code></pre>
 </div>
 </div>
 
